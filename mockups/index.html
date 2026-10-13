@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>שש-בש – מוקאפ</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Frank+Ruhl+Libre:wght@900&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" rel="stylesheet">
+<style>
+  :root { --bg:#120e0b; --card:#1d1814; --card-b:#2e261f; --text:#efe6d6; --muted:#9b8e7d; --gold:#e3c068; --gold-d:#b8924a; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: #e9e7e2; font-family: Heebo, -apple-system, sans-serif; }
+  body.device { background: var(--bg); overflow: hidden; }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 12px 16px 6px; font-size: 13px; color: #444; }
+  .toolbar button { font: inherit; padding: 5px 12px; border-radius: 8px; border: 1px solid #b9b5ab; background: #fff; cursor: pointer; }
+  .toolbar button.on { background: #222; color: #fff; border-color: #222; }
+  .hint { padding: 0 16px 10px; font-size: 13px; color: #666; }
+  body.device .toolbar, body.device .hint { display: none; }
+
+  #stage { position: relative; margin: 0 16px; }
+  #frame { position: absolute; top: 0; left: 0; width: 872px; height: 413px; border-radius: 56px; background: #050505; transform-origin: top left; }
+  #screen { position: absolute; top: 10px; left: 10px; width: 852px; height: 393px; border-radius: 48px; overflow: hidden; background: var(--bg); color: var(--text); transform-origin: top left; }
+  body.device #frame { position: fixed; inset: 0; width: 100vw; height: 100vh; border-radius: 0; transform: none !important; background: var(--bg); }
+  body.device #screen { top: 0; left: 0; border-radius: 0; }
+  body.device .island, body.device .homebar { display: none; }
+  .island { position: absolute; left: 12px; top: 50%; width: 34px; height: 120px; margin-top: -60px; border-radius: 20px; background: #000; z-index: 20; }
+  .homebar { position: absolute; bottom: 7px; left: 50%; width: 180px; height: 5px; margin-left: -90px; border-radius: 3px; background: #e9e9e9; opacity: .5; z-index: 20; }
+
+  :where(button.u) { all: unset; cursor: pointer; box-sizing: border-box; font-family: Heebo, sans-serif; text-align: center; }
+  .scr { position: absolute; inset: 0; display: none; }
+  .scr.on { display: flex; }
+
+  /* home */
+  #home { flex-direction: column; align-items: center; padding: 26px 70px 22px; }
+  .title { font-family: 'Frank Ruhl Libre', serif; font-weight: 900; font-size: 54px; line-height: 1; color: var(--gold); letter-spacing: 1px; }
+  .subtitle { font-size: 14px; color: var(--muted); margin-top: 6px; }
+  .hrow { display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%; flex: 1; gap: 30px; }
+  .goldbtn { display: flex; align-items: center; justify-content: center; gap: 10px; height: 52px; border-radius: 14px; background: var(--gold); color: #1a1410; font-size: 19px; font-weight: 700; }
+  .goldbtn:active { transform: scale(.98); }
+  .ghostbtn { display: flex; align-items: center; justify-content: center; gap: 8px; height: 40px; border-radius: 12px; border: 1px solid var(--gold-d); color: var(--gold); font-size: 15px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 13px; border-radius: 20px; background: var(--card); border: 1px solid var(--card-b); color: var(--text); font-size: 14px; }
+  .chip i { color: var(--gold-d); font-size: 16px; }
+  .stat { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+  .stat i { color: var(--gold-d); font-size: 15px; }
+
+  /* game */
+  #game { flex-direction: row; padding: 8px 52px 8px 50px; gap: 7px; }
+  .panel { width: 132px; display: flex; flex-direction: column; gap: 6px; }
+  .panel > * { flex-shrink: 0; }
+  .prow { display: flex; gap: 5px; justify-content: flex-start; }
+  .ibtn { width: 32px; height: 30px; border-radius: 9px; background: var(--card); border: 1px solid var(--card-b); color: var(--text); display: flex; align-items: center; justify-content: center; font-size: 17px; }
+  .sname { font-size: 13px; line-height: 18px; min-height: 18px; font-weight: 500; outline: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+  .pcard { background: var(--card); border: 1px solid var(--card-b); border-radius: 12px; padding: 5px 10px; line-height: 1.3; transition: border-color .2s; }
+  .pcard.act { border-color: var(--gold-d); }
+  .pcard .ph { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; }
+  .pcard .dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+  .pcard .lv { font-size: 11px; color: var(--muted); }
+  .pcard .pp { font-size: 12px; color: var(--muted); }
+  .pcard .pp b { font-size: 18px; line-height: 1.15; color: var(--text); font-weight: 500; margin-inline-end: 3px; }
+  .pcard .st { font-size: 11px; color: var(--gold); font-weight: 500; margin-inline-start: auto; }
+  .score { display: flex; align-items: center; justify-content: space-around; padding: 4px 6px; }
+  .score div { display: flex; flex-direction: column; align-items: center; }
+  .score small { font-size: 10.5px; color: var(--muted); }
+  .score b { font-size: 18px; font-weight: 500; }
+  .score .sep { width: 1px; height: 26px; background: var(--card-b); }
+  .trn { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; cursor: pointer; color: var(--text); padding: 0 2px; }
+  .tg { width: 30px; height: 17px; border-radius: 9px; background: #3a8f5c; position: relative; transition: background .15s; }
+  .tg span { position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; transition: left .15s; }
+  .tg.off { background: #4a423a; } .tg.off span { left: 15px; }
+  .undo { font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 5px; padding: 2px; }
+  .done { height: 40px; border-radius: 11px; background: var(--gold); color: #1a1410; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .done.dim { background: #3a3129; color: #8d8172; }
+  #bwrap { position: relative; width: 540px; height: 377px; }
+  #toast { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10,8,6,.88); color: var(--text); border: 1px solid var(--card-b); border-radius: 12px; padding: 8px 16px; font-size: 15px; white-space: nowrap; z-index: 3; }
+
+  /* overlays */
+  #ov { display: none; position: absolute; inset: 0; background: rgba(0,0,0,.6); align-items: center; justify-content: center; z-index: 10; }
+  .dlg { background: var(--card); border: 1px solid var(--card-b); border-radius: 16px; padding: 14px 18px; color: var(--text); }
+  .pbtn { padding: 8px 14px; border-radius: 10px; font-size: 15px; }
+  .pbtn.gold { background: var(--gold); color: #1a1410; font-weight: 700; }
+  .pbtn.dark { background: #2c251f; color: var(--text); }
+  .seg { display: flex; background: #2a231d; border-radius: 9px; padding: 2px; }
+  .seg button { padding: 5px 10px; border-radius: 7px; font-size: 13px; color: #cbbfae; }
+  .seg button.on { background: var(--gold); color: #1a1410; font-weight: 500; }
+  .field { width: 100%; height: 38px; border-radius: 10px; border: 1px solid var(--card-b); background: #15110e; color: var(--text); padding: 0 12px; font: 15px Heebo, sans-serif; outline: none; }
+  .field:focus { border-color: var(--gold-d); }
+  .lbl { font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+  .msheet { width: 600px; height: 100%; background: var(--card); border-inline-end: 1px solid var(--card-b); padding: 12px 16px 12px 56px; animation: slin .2s ease-out; }
+  @keyframes slin { from { transform: translateX(-100%); } to { transform: none; } }
+  .mgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+  .msec { font-size: 11px; color: var(--muted); margin: 6px 0 2px; }
+  .mi { display: flex; align-items: center; gap: 10px; width: 100%; padding: 5px 8px; border-radius: 10px; font-size: 15px; color: var(--text); text-align: right; }
+  .mi:hover { background: #2a231d; }
+  .mi i { font-size: 19px; color: var(--gold-d); }
+  .mi .mt { display: flex; flex-direction: column; line-height: 1.25; }
+  .mi small { font-size: 11px; color: var(--muted); }
+  .bdg { margin-inline-start: auto; background: #5a3a12; color: #ffb648; font-size: 12px; font-weight: 500; border-radius: 9px; padding: 0 7px; }
+  .sw { width: 26px; height: 26px; border-radius: 7px; border: 2px solid transparent; cursor: pointer; }
+  .sw.on { border-color: var(--gold); }
+  #demo { display: none; position: absolute; top: 166px; left: 20px; z-index: 2; }
+</style>
+</head>
+<body>
+<div class="toolbar" dir="ltr">
+  <span>Theme:</span>
+  <button data-t="leather" class="on">Leather and gold</button>
+  <button data-t="wood">Classic wood</button>
+  <button data-t="inlay">Israeli inlay</button>
+  <button data-t="felt">Tournament felt</button>
+  <button data-t="marble">Marble</button>
+  <button data-t="dark">Modern dark</button>
+  <span style="margin-left:auto"></span>
+  <button id="tbScen">Training scenario</button>
+  <button id="tbHome">↺ Home</button>
+</div>
+<div class="hint" dir="ltr">Start with משחק חדש: both sides roll one die and the higher one starts (tie = roll again). The bot here is a simple placeholder, not the real engine. "Training scenario" loads a position with a 6-3 roll: play 13/10 and 13/7, then press סיימתי, to see the mistake popup. On an iPhone in landscape the mockup fills the screen.</div>
+
+<div id="stage">
+  <div id="frame">
+    <div id="screen" dir="ltr">
+      <div class="island"></div>
+      <div class="homebar"></div>
+
+      <!-- HOME -->
+      <div id="home" class="scr on" dir="rtl">
+        <div class="title">שש־בש</div>
+        <div class="subtitle">מאמן אישי מול המחשב</div>
+        <div class="hrow">
+          <div style="width:330px;display:flex;flex-direction:column;gap:12px">
+            <button class="u goldbtn" id="hNew"><i class="ti ti-player-play"></i>משחק חדש</button>
+            <button class="u ghostbtn" id="hResume" style="display:none"><i class="ti ti-player-play"></i><span id="hResumeT">המשך משחק</span></button>
+            <div style="display:flex;gap:8px;justify-content:center">
+              <button class="u chip" data-nav="היסטוריה"><i class="ti ti-history"></i>היסטוריה</button>
+              <button class="u chip" data-nav="סטטיסטיקה"><i class="ti ti-chart-line"></i>סטטיסטיקה</button>
+              <button class="u chip" data-nav="הגדרות"><i class="ti ti-settings"></i>הגדרות</button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px;margin-top:10px">
+              <div class="stat"><i class="ti ti-trophy"></i><span id="hToday">עוד לא שיחקת היום</span><span>·</span><span id="hLevel">רמת המחשב: אלוף העולם</span></div>
+              <div class="stat"><i class="ti ti-chart-dots"></i><span>משחק אחרון: ניצחון</span><span>·</span><span>דירוג ביצועים 6.2 (מומחה)</span></div>
+            </div>
+            <div id="hMsg" style="font-size:12.5px;color:var(--gold);min-height:16px"></div>
+          </div>
+          <svg id="homeBoard" width="380" height="250" viewBox="0 0 610 377" style="display:block"></svg>
+        </div>
+      </div>
+
+      <!-- GAME -->
+      <div id="game" class="scr">
+        <div class="panel" dir="rtl">
+          <div class="prow">
+            <button class="u ibtn" id="gMenu" aria-label="תפריט"><i class="ti ti-menu-2"></i></button>
+            <button class="u ibtn" id="gPause" aria-label="השהה"><i class="ti ti-player-pause"></i></button>
+            <button class="u ibtn" id="gStop" aria-label="עצור"><i class="ti ti-player-stop"></i></button>
+          </div>
+          <div class="sname" id="sname" contenteditable="true">אימון ערב</div>
+          <div class="pcard" id="cardB">
+            <div class="ph"><span class="dot" id="mkB"></span>המחשב<span class="st" id="stB"></span></div>
+            <div class="lv" id="lvB">אלוף העולם</div>
+            <div class="pp"><b id="pipB">167</b>פיפים</div>
+          </div>
+          <div class="pcard score">
+            <div><small>אתה</small><b id="scW">0</b></div><div class="sep"></div><div><small>המחשב</small><b id="scB">0</b></div>
+          </div>
+          <div class="pcard" id="cardW">
+            <div class="ph"><span class="dot" id="mkW"></span>אתה<span class="st" id="stW"></span></div>
+            <div class="pp"><b id="pipW">167</b>פיפים</div>
+          </div>
+          <div class="trn" id="trn"><span>מצב אימון</span><span class="tg" id="tg"><span></span></span></div>
+          <div style="flex:1"></div>
+          <button class="u undo" id="gUndo"><i class="ti ti-arrow-back-up"></i>בטל מהלך</button>
+          <button class="u done dim" id="gDone"><i class="ti ti-check"></i>סיימתי</button>
+        </div>
+        <div id="bwrap">
+          <svg id="board" width="540" height="377" viewBox="0 0 540 377" style="display:block"></svg>
+          <div id="toast"></div>
+          <div id="demo" dir="rtl">
+            <div style="display:flex;gap:6px;align-items:center;background:rgba(10,8,6,.92);border:1px solid var(--card-b);border-radius:12px;padding:5px 8px;font-size:13px">
+              <span id="demoT">מומלץ: 13/4</span>
+              <button class="u pbtn dark" id="dAgain" style="padding:4px 10px;font-size:13px">הצג שוב</button>
+              <button class="u pbtn dark" id="dMine" style="padding:4px 10px;font-size:13px">שלי</button>
+              <button class="u pbtn gold" id="dOk" style="padding:4px 10px;font-size:13px">הבנתי</button>
+            </div>
+          </div>
+        </div>
+        <svg id="tray" width="64" height="377" viewBox="0 0 64 377" style="display:block"></svg>
+      </div>
+
+      <div id="ov"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TH = {
+  leather:{ frame:'#17120e', stitch:'#b8924a', num:'#b8924a', bed:'#a2622f', bar:'#0f0b08', pA:'#1b150f', pB:'#ddb382', w:'#f3eadb', ws:'#c2b192', b:'#9a4e25', bs:'#5a2a10', die:'#111111', dieS:'#3a3a3a', pip:'#ffffff', tray:'#1b1612', trayIn:'#0d0a08', sw:['#17120e','#a2622f'] },
+  wood:   { frame:'#5b3a1e', stitch:null, num:'rgba(255,255,255,.6)', bed:'#d9b98a', bar:'#4a2f17', pA:'#7a2418', pB:'#f3e6c8', w:'#f6f0e2', ws:'#a89a7c', b:'#2b211b', bs:'#000', die:'#ffffff', dieS:'#9c8f78', pip:'#111', tray:'#4a2f17', trayIn:'#3a2411', sw:['#5b3a1e','#d9b98a'] },
+  inlay:  { frame:'#3d2a17', stitch:'#d8c9a3', num:'#d8c9a3', bed:'#b98d5e', bar:'#2c1e10', pA:'#2e5e4e', pB:'#ece2c9', w:'#efe6d2', ws:'#9c8a68', b:'#6b2b1a', bs:'#3a160c', die:'#f2e8d0', dieS:'#9c8a68', pip:'#3d2a17', tray:'#2c1e10', trayIn:'#1f150b', sw:['#3d2a17','#2e5e4e'] },
+  felt:   { frame:'#3b2a20', stitch:'#8a6a4a', num:'rgba(255,255,255,.6)', bed:'#1f5d3a', bar:'#2a1d15', pA:'#b8312f', pB:'#e9e4d4', w:'#f5f5f0', ws:'#9a9a90', b:'#1c1c1c', bs:'#000', die:'#c0392b', dieS:'#7d1f16', pip:'#ffffff', tray:'#2a1d15', trayIn:'#1a120d', sw:['#3b2a20','#1f5d3a'] },
+  marble: { frame:'#b8a06a', stitch:null, num:'#5c4a22', bed:'#f2efe9', bar:'#a38c58', pA:'#2a2a2a', pB:'#c9b37e', w:'#ffffff', ws:'#b8a06a', b:'#1b1b1b', bs:'#b8a06a', die:'#ffffff', dieS:'#b8a06a', pip:'#8a6d2f', tray:'#a38c58', trayIn:'#8a7444', sw:['#b8a06a','#f2efe9'] },
+  dark:   { frame:'#0d0e10', stitch:null, num:'#5d646e', bed:'#1d1f24', bar:'#121317', pA:'#00c2a8', pB:'#3a3f4b', w:'#e8e8e8', ws:'#9aa0a6', b:'#ff4d6d', bs:'#a3243d', die:'#2b2f36', dieS:'#00c2a8', pip:'#00e0c2', tray:'#16181c', trayIn:'#0c0d10', sw:['#0d0e10','#00c2a8'] }
+};
+let th = 'leather';
+
+const W = 540, H = 377, F = 18, BAR = 30, HALF = (W - 2*F - BAR) / 2, PW = HALF / 6, R = 15, PH = 150;
+const BX = F + HALF, RX = F + HALF + BAR;
+const INIT = { w:{24:2,13:5,8:3,6:5}, b:{1:2,12:5,17:3,19:5}, wbar:0, bbar:0, woff:0, boff:0 };
+const SCEN = { w:{6:4,8:3,13:4,24:2,4:2}, b:{1:2,12:4,17:3,19:4,20:2}, wbar:0, bbar:0, woff:0, boff:0 };
+const BEST = [{f:13,t:4}], MINE = [{f:13,t:10},{f:13,t:7}];
+const LEVELS = ['מתחיל','בינוני','מתקדם','מומחה','אלוף העולם'];
+
+let pos = clone(INIT), turnDice = [], botDice = null, rolling = null, opening = null, mode = 'idle', sel = null;
+let turnStart, moves = [], scenario = false, lastBot = [], ghosts = null, gameId = 0, hasGame = false;
+let level = 'אלוף העולם', trainOn = true, sound = true, speed = 'רגיל', mistakes = 0, after, demoMine = false;
+
+const $ = id => document.getElementById(id);
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+const rnd = () => 1 + Math.floor(Math.random() * 6);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const spd = () => ({ 'איטי': 1.8, 'רגיל': 1, 'מהיר': .4 })[speed];
+
+/* ---------- rules (mockup: no bearing off) ---------- */
+const BARP = c => c === 'w' ? 25 : 0;
+const stepTo = (c, f, d) => c === 'w' ? (f === 25 ? 25 - d : f - d) : (f === 0 ? d : f + d);
+function canLand(st, c, t) { if (t < 1 || t > 24) return false; return ((c === 'w' ? st.b : st.w)[t] || 0) < 2; }
+function legalStep(st, c, f, d) {
+  const bar = c === 'w' ? st.wbar : st.bbar;
+  if (bar > 0 && f !== BARP(c)) return null;
+  if (f === BARP(c)) { if (!bar) return null; }
+  else if (!((c === 'w' ? st.w : st.b)[f] > 0)) return null;
+  const t = stepTo(c, f, d);
+  return canLand(st, c, t) ? t : null;
+}
+function apply(st, c, f, t) {
+  const s = clone(st), own = c === 'w' ? s.w : s.b, opp = c === 'w' ? s.b : s.w;
+  if (f === BARP(c)) { if (c === 'w') s.wbar--; else s.bbar--; }
+  else { own[f]--; if (!own[f]) delete own[f]; }
+  if (opp[t] === 1) { delete opp[t]; if (c === 'w') s.bbar++; else s.wbar++; }
+  own[t] = (own[t] || 0) + 1;
+  return s;
+}
+const rem = () => turnDice.filter(d => !d.used).map(d => d.v);
+function dests(from) {
+  const out = new Map();
+  const rec = (st, f, dice, path) => {
+    const seen = new Set();
+    dice.forEach((d, i) => {
+      if (seen.has(d)) return; seen.add(d);
+      const t = legalStep(st, 'w', f, d); if (t == null) return;
+      const np = path.concat(d);
+      if (!out.has(t) || out.get(t).length > np.length) out.set(t, np);
+      const ns = apply(st, 'w', f, t);
+      if (ns.wbar > 0) return;
+      const nd = dice.slice(); nd.splice(i, 1); rec(ns, t, nd, np);
+    });
+  };
+  rec(pos, from, rem(), []);
+  return [...out].map(([t, d]) => ({ t, dice: d, l: d.join('+') }));
+}
+function anyLegal() {
+  const froms = pos.wbar ? [25] : Object.keys(pos.w).map(Number);
+  return froms.some(f => [...new Set(rem())].some(d => legalStep(pos, 'w', f, d) != null));
+}
+function pips(st) {
+  let w = st.wbar * 25, b = st.bbar * 25;
+  for (const p in st.w) w += p * st.w[p];
+  for (const p in st.b) b += (25 - p) * st.b[p];
+  return [w, b];
+}
+function evalB(s) {
+  let sc = s.wbar * 2.5 - pips(s)[1] * .02;
+  const wq = Object.keys(s.w).map(Number);
+  for (const k in s.b) {
+    const p = +k, n = s.b[k];
+    if (n >= 2) sc += p >= 19 ? 2 : p >= 13 ? 1.2 : .6;
+    else if (wq.some(q => q > p && q - p <= 12) || (s.wbar && p >= 19)) sc -= p >= 13 ? 2 : 1.4;
+  }
+  return sc;
+}
+function botBest(st, dice) {
+  let best = null, bl = -1, bs = -1e9;
+  const rec = (s, ds, used) => {
+    let moved = false; const seen = new Set();
+    ds.forEach((d, i) => {
+      if (seen.has(d)) return; seen.add(d);
+      const froms = s.bbar ? [0] : Object.keys(s.b).map(Number);
+      froms.forEach(f => {
+        const t = legalStep(s, 'b', f, d); if (t == null) return;
+        moved = true; const nd = ds.slice(); nd.splice(i, 1);
+        rec(apply(s, 'b', f, t), nd, used.concat([[f, t]]));
+      });
+    });
+    if (!moved) { const sc = evalB(s); if (used.length > bl || (used.length === bl && sc > bs)) { bl = used.length; bs = sc; best = { s, moves: used }; } }
+  };
+  rec(st, dice, []);
+  return best;
+}
+
+/* ---------- drawing ---------- */
+function px(p) {
+  if (p <= 6)  return RX + HALF - (p - .5) * PW;
+  if (p <= 12) return F + HALF - (p - 6.5) * PW;
+  if (p <= 18) return F + (p - 12.5) * PW;
+  return RX + (p - 18.5) * PW;
+}
+const isTopRow = p => p >= 13;
+function cy(p, k, n) {
+  const sp = n <= 5 ? 2*R : (PH - 2*R) / (n - 1);
+  return isTopRow(p) ? F + R + k*sp : H - F - R - k*sp;
+}
+function checker(x, y, c, s) {
+  return `<circle cx="${x}" cy="${y}" r="${R-.5}" fill="${c}" stroke="${s}" stroke-width="1.4"/>` +
+         `<circle cx="${x}" cy="${y}" r="${R-5}" fill="none" stroke="${s}" stroke-opacity=".45" stroke-width="1"/>` +
+         `<circle cx="${x}" cy="${y}" r="${R-2.5}" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="1"/>`;
+}
+function die(x, y, v, sz, fade, T) {
+  const o = {1:[[.5,.5]], 2:[[.28,.28],[.72,.72]], 3:[[.26,.26],[.5,.5],[.74,.74]], 4:[[.28,.28],[.72,.28],[.28,.72],[.72,.72]],
+             5:[[.26,.26],[.74,.26],[.5,.5],[.26,.74],[.74,.74]], 6:[[.28,.22],[.72,.22],[.28,.5],[.72,.5],[.28,.78],[.72,.78]]}[v];
+  return `<g opacity="${fade ? .3 : 1}"><rect x="${x}" y="${y}" width="${sz}" height="${sz}" rx="${sz*.2}" fill="${T.die}" stroke="${T.dieS}"/>` +
+         o.map(q => `<circle cx="${x + q[0]*sz}" cy="${y + q[1]*sz}" r="${sz*.09}" fill="${T.pip}"/>`).join('') + `</g>`;
+}
+function diceRow(cx, list, T) {
+  const n = list.length, sz = n > 2 ? 24 : 30, g = 6, tw = n*sz + (n-1)*g;
+  let x = cx - tw/2, s = '';
+  list.forEach(d => { s += die(x, H/2 - sz/2, d.v, sz, d.used, T); x += sz + g; });
+  return s;
+}
+function pill(cx, y, text) {
+  const w = text.length * 7.2 + 18;
+  return `<rect x="${cx - w/2}" y="${y}" width="${w}" height="19" rx="9.5" fill="rgba(10,8,6,.85)" stroke="#b8924a" stroke-opacity=".5"/>` +
+         `<text x="${cx}" y="${y + 13.5}" font-size="11.5" text-anchor="middle" fill="#efe6d6" font-family="Heebo" direction="rtl">${text}</text>`;
+}
+function boardSVG(st, T, o = {}) {
+  let s = `<rect width="${W}" height="${H}" rx="12" fill="${T.frame}"/>`;
+  if (T.stitch) s += `<rect x="4.5" y="4.5" width="${W-9}" height="${H-9}" rx="9" fill="none" stroke="${T.stitch}" stroke-width="1" stroke-dasharray="5 3.5" opacity=".9"/>`;
+  s += `<rect x="${F}" y="${F}" width="${HALF}" height="${H-2*F}" fill="${T.bed}"/><rect x="${RX}" y="${F}" width="${HALF}" height="${H-2*F}" fill="${T.bed}"/>` +
+       `<rect x="${BX+3}" y="${F-3}" width="${BAR-6}" height="${H-2*F+6}" rx="3" fill="${T.bar}"/>`;
+  const ds = o.ds || [];
+  for (let p = 1; p <= 24; p++) {
+    const x = px(p), t = isTopRow(p), by = t ? F : H - F, ty = t ? F + PH : H - F - PH;
+    const tri = `points="${x-PW/2+.5},${by} ${x+PW/2-.5},${by} ${x},${ty}"`;
+    s += `<polygon ${tri} fill="${p % 2 ? T.pA : T.pB}"/>`;
+    s += `<text x="${x}" y="${t ? F-5 : H-F+11}" font-size="8.5" text-anchor="middle" fill="${T.num}" font-family="Heebo">${p}</text>`;
+    if (ds.find(d => d.t === p)) s += `<polygon ${tri} fill="#ffd60a" fill-opacity=".35"/>`;
+  }
+  for (let p = 1; p <= 24; p++) {
+    const x = px(p);
+    [['w', T.w, T.ws], ['b', T.b, T.bs]].forEach(([k, c, sc]) => {
+      const n = st[k][p] || 0;
+      for (let i = 0; i < n; i++) {
+        s += checker(x, cy(p, i, n), c, sc);
+        if (k === 'w' && o.sel === p && i === n - 1) s += `<circle cx="${x}" cy="${cy(p, i, n)}" r="${R+2}" fill="none" stroke="#ffd60a" stroke-width="3"/>`;
+      }
+      if (n > 5) s += `<text x="${x}" y="${cy(p, n-1, n) + 4}" font-size="11" text-anchor="middle" fill="${k === 'w' ? '#333' : '#fff'}" font-family="Heebo">${n}</text>`;
+    });
+  }
+  for (let i = 0; i < st.bbar; i++) s += checker(BX + BAR/2, H/2 - R - 8 - i*2*R, T.b, T.bs);
+  for (let i = 0; i < st.wbar; i++) {
+    const y = H/2 + R + 8 + i*2*R;
+    s += checker(BX + BAR/2, y, T.w, T.ws);
+    if (o.sel === 25 && i === st.wbar - 1) s += `<circle cx="${BX + BAR/2}" cy="${y}" r="${R+2}" fill="none" stroke="#ffd60a" stroke-width="3"/>`;
+  }
+  (o.marks || []).forEach(t => {
+    const n = st.b[t] || 0; if (!n) return;
+    s += `<circle cx="${px(t)}" cy="${cy(t, n-1, n)}" r="${R+1.5}" fill="none" stroke="#e3c068" stroke-width="1.5" stroke-dasharray="3 2"/>`;
+  });
+  ds.forEach(d => {
+    const n = st.w[d.t] || 0, x = px(d.t), y = cy(d.t, Math.min(n, 4), Math.max(n + 1, 1));
+    s += `<circle cx="${x}" cy="${y}" r="${R-1}" fill="#ffd60a" fill-opacity=".25" stroke="#ffd60a" stroke-width="2" stroke-dasharray="4 3"/>` +
+         `<text x="${x}" y="${y+4.5}" font-size="12" text-anchor="middle" fill="#3a2f00" font-family="Heebo" font-weight="700">${d.l}</text>`;
+  });
+  if (o.wDice) s += diceRow(RX + HALF/2, o.wDice, T);
+  if (o.bDice) s += diceRow(F + HALF/2, o.bDice, T);
+  if (o.opening) {
+    const op = o.opening;
+    s += die(F + HALF/2 - 15, H/2 - 15, op.b, 30, false, T) + die(RX + HALF/2 - 15, H/2 - 15, op.w, 30, false, T);
+    if (op.label) s += pill(op.winner === 'b' ? F + HALF/2 : op.winner === 'w' ? RX + HALF/2 : W/2, H/2 + 20, op.label);
+  }
+  if (o.thinking) s += pill(F + HALF/2, H/2 + 20, 'המחשב חושב…');
+  if (o.ghosts) o.ghosts.forEach((g, i) => {
+    const x0 = px(g.f), y0 = cy(g.f, (SCEN.w[g.f] || 1) - 1 - i, SCEN.w[g.f]);
+    const n = st.w[g.t] || 0, x1 = px(g.t), y1 = cy(g.t, n + i, Math.max(n + 1 + i, 1));
+    s += `<path d="M${x0},${y0} Q${(x0+x1)/2},${H/2} ${x1},${y1}" fill="none" stroke="#ffd60a" stroke-width="2.5" stroke-dasharray="6 4"/>` +
+         `<g class="gh" style="transition:transform 1s ease-in-out;transform:translate(${x0}px,${y0}px)" data-x="${x1}" data-y="${y1}">` +
+         `<circle r="${R-1}" fill="${T.w}" fill-opacity=".6" stroke="#ffd60a" stroke-width="2" stroke-dasharray="4 3"/></g>`;
+  });
+  if (o.clickable) {
+    for (let p = 1; p <= 24; p++) {
+      const x = px(p), t = isTopRow(p);
+      s += `<rect data-p="${p}" x="${x-PW/2}" y="${t ? F : H/2}" width="${PW}" height="${H/2-F}" fill="transparent" style="cursor:pointer"/>`;
+    }
+    s += `<rect data-p="25" x="${BX}" y="${F}" width="${BAR}" height="${H-2*F}" fill="transparent" style="cursor:pointer"/>`;
+  }
+  return s;
+}
+function traySVG(st, T) {
+  const w = 64, h = H;
+  let s = `<rect x="1" y="1" width="${w-2}" height="${h-2}" rx="10" fill="${T.tray}" stroke="#3a3028"/>` +
+          `<rect x="8" y="10" width="${w-16}" height="${h/2-16}" rx="5" fill="${T.trayIn}"/>` +
+          `<rect x="8" y="${h/2+6}" width="${w-16}" height="${h/2-16}" rx="5" fill="${T.trayIn}"/>`;
+  for (let i = 0; i < st.boff; i++) s += `<rect x="12" y="${14 + i*9}" width="${w-24}" height="7" rx="2" fill="${T.b}"/>`;
+  for (let i = 0; i < st.woff; i++) s += `<rect x="12" y="${h - 20 - i*9}" width="${w-24}" height="7" rx="2" fill="${T.w}"/>`;
+  return s;
+}
+
+function render() {
+  const T = TH[th], o = { clickable: true, marks: mode === 'play' ? lastBot : [] };
+  if (mode === 'play') { o.wDice = turnDice; if (sel != null) { o.sel = sel; o.ds = dests(sel); } }
+  if (mode === 'demo') { o.wDice = turnDice.map(d => ({ v: d.v })); o.ghosts = ghosts; }
+  if (mode === 'bot' && botDice) { o.bDice = botDice; o.thinking = true; }
+  if (rolling) o[rolling.side === 'w' ? 'wDice' : 'bDice'] = rolling.d.map(v => ({ v }));
+  if (opening) o.opening = opening;
+  const svg = $('board');
+  svg.innerHTML = boardSVG(pos, T, o);
+  if (o.ghosts) requestAnimationFrame(() => requestAnimationFrame(() =>
+    svg.querySelectorAll('.gh').forEach(g => g.style.transform = `translate(${g.dataset.x}px,${g.dataset.y}px)`)));
+  $('tray').innerHTML = traySVG(pos, T);
+
+  const [pw, pb] = pips(pos);
+  $('pipW').textContent = pw; $('pipB').textContent = pb;
+  $('mkW').style.background = T.w; $('mkB').style.background = T.b;
+  const myTurn = mode === 'play' || (rolling && rolling.side === 'w');
+  $('cardW').classList.toggle('act', !!myTurn);
+  $('cardB').classList.toggle('act', mode === 'bot' || !!(rolling && rolling.side === 'b'));
+  $('stW').textContent = opening ? (opening.winner === 'w' ? 'מתחיל' : '') : mode === 'play' ? 'תורך' : '';
+  $('stB').textContent = opening ? (opening.winner === 'b' ? 'מתחיל' : '') : mode === 'bot' ? 'חושב…' : '';
+  $('gDone').classList.toggle('dim', !(mode === 'play' && (!rem().length || !anyLegal())));
+  $('lvB').textContent = level;
+}
+function renderHome() {
+  const T = TH[th];
+  $('homeBoard').innerHTML = boardSVG(INIT, T) + `<g transform="translate(${W + 6},0)">${traySVG(INIT, T)}</g>`;
+  $('hLevel').textContent = `רמת המחשב: ${level}`;
+  $('hResume').style.display = hasGame ? 'flex' : 'none';
+  $('hResumeT').textContent = `המשך משחק: ${$('sname').textContent.trim()}`;
+}
+function toast(t, ms = 1500) { const e = $('toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => e.style.display = 'none', ms); }
+
+/* ---------- flow ---------- */
+function show(id) { ['home', 'game'].forEach(s => $(s).classList.toggle('on', s === id)); if (id === 'home') renderHome(); else render(); }
+
+function newGame(name, lvl, train) {
+  gameId++; hasGame = true; scenario = false; lastBot = []; mistakes = 0;
+  pos = clone(INIT); turnDice = []; botDice = null; sel = null; moves = []; mode = 'idle';
+  level = lvl; trainOn = train; $('tg').classList.toggle('off', !trainOn);
+  const d = new Date();
+  $('sname').textContent = name || `משחק ${d.getDate()}.${d.getMonth()+1} · ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+  show('game'); openingRoll(gameId);
+}
+async function openingRoll(id) {
+  mode = 'opening';
+  for (;;) {
+    for (let i = 0; i < 9; i++) { opening = { b: rnd(), w: rnd() }; render(); await sleep(70); if (id !== gameId) return; }
+    const b = rnd(), w = rnd();
+    if (b === w) { opening = { b, w, label: 'תיקו – מטילים שוב' }; render(); await sleep(1300); if (id !== gameId) return; continue; }
+    const win = w > b ? 'w' : 'b';
+    opening = { b, w, winner: win, label: win === 'w' ? 'אתה מתחיל' : 'המחשב מתחיל' }; render();
+    await sleep(1600); if (id !== gameId) return;
+    opening = null;
+    if (win === 'w') { turnDice = [{ v: w, used: false }, { v: b, used: false }]; startWhite(id); }
+    else botTurn(id, [b, w]);
+    return;
+  }
+}
+async function rollAnim(id, side) {
+  for (let i = 0; i < 8; i++) { rolling = { side, d: [rnd(), rnd()] }; render(); await sleep(70); if (id !== gameId) return false; }
+  rolling = null; return true;
+}
+async function startWhite(id) {
+  mode = 'play'; turnStart = clone(pos); moves = []; sel = null; render();
+  if (!anyLegal()) { toast('אין לך מהלך אפשרי'); await sleep(1600); if (id !== gameId) return; botTurn(id); }
+}
+async function whiteTurn(id) {
+  if (!(await rollAnim(id, 'w'))) return;
+  const a = rnd(), b = rnd();
+  turnDice = (a === b ? [a, a, a, a] : [a, b]).map(v => ({ v, used: false }));
+  startWhite(id);
+}
+async function botTurn(id, dice) {
+  mode = 'bot'; sel = null; turnDice = [];
+  if (!dice) { if (!(await rollAnim(id, 'b'))) return; dice = [rnd(), rnd()]; }
+  botDice = dice.map(v => ({ v })); render();
+  await sleep(1000 * spd()); if (id !== gameId) return;
+  const best = botBest(pos, dice[0] === dice[1] ? [dice[0], dice[0], dice[0], dice[0]] : dice);
+  if (best && best.moves.length) { pos = best.s; lastBot = best.moves.map(m => m[1]); }
+  else { lastBot = []; toast('למחשב אין מהלך אפשרי'); }
+  render(); await sleep(600 * spd()); if (id !== gameId) return;
+  botDice = null; whiteTurn(id);
+}
+function loadScenario() {
+  gameId++; hasGame = true; scenario = true; lastBot = [];
+  pos = clone(SCEN); opening = null; rolling = null; botDice = null;
+  turnDice = [{ v: 6, used: false }, { v: 3, used: false }];
+  $('sname').textContent = 'תרחיש אימון';
+  trainOn = true; $('tg').classList.remove('off');
+  show('game'); startWhite(gameId);
+}
+
+$('board').addEventListener('click', ev => {
+  const p = +ev.target.dataset.p;
+  if (!p || mode !== 'play') return;
+  if (sel != null) {
+    const d = dests(sel).find(x => x.t === p);
+    if (d) {
+      let f = sel;
+      d.dice.forEach(v => {
+        const t = stepTo('w', f, v); pos = apply(pos, 'w', f, t); moves.push([f, t]);
+        turnDice.find(x => !x.used && x.v === v).used = true; f = t;
+      });
+      sel = null; render(); return;
+    }
+  }
+  const can = pos.wbar ? p === 25 : (p !== 25 && pos.w[p] > 0);
+  sel = can && rem().length && dests(p).length && sel !== p ? p : null;
+  render();
+});
+
+const isMove = a => moves.map(x => x.join('/')).sort().join(' ') === a;
+$('gDone').onclick = () => {
+  if (mode !== 'play') return;
+  if (rem().length && anyLegal()) {
+    $('gDone').animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'translateX(0)'}], { duration: 250 });
+    toast('יש עוד קוביות לשחק', 1000);
+    return;
+  }
+  sel = null;
+  if (scenario && trainOn && isMove('13/10 13/7')) { mistakes++; showMistake(); }
+  else botTurn(gameId);
+};
+$('gUndo').onclick = () => { if (mode !== 'play') return; pos = clone(turnStart); turnDice.forEach(d => d.used = false); moves = []; sel = null; render(); };
+
+/* ---------- training popup and demo ---------- */
+function ovShow(h, side) {
+  const o = $('ov'); o.innerHTML = h; o.style.display = 'flex';
+  o.style.justifyContent = side ? 'flex-start' : ''; o.style.alignItems = side ? 'stretch' : '';
+}
+function closeOv() { const o = $('ov'); o.style.display = 'none'; o.onclick = null; }
+function showMistake() {
+  ovShow(`<div class="dlg" dir="rtl" style="width:510px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <span style="background:#5a3a12;color:#ffb648;border-radius:8px;padding:2px 10px;font-size:15px;font-weight:700">טעות</span>
+      <span style="display:flex;gap:3px"><i style="width:18px;height:6px;border-radius:3px;background:#ffb648;display:block"></i><i style="width:18px;height:6px;border-radius:3px;background:#ffb648;display:block"></i><i style="width:18px;height:6px;border-radius:3px;background:#4a423a;display:block"></i></span>
+      <span style="font-size:12px;color:var(--muted)">רמה 2 מתוך 3</span>
+      <span style="margin-inline-start:auto;font-size:13px;color:#ff8a8a">הפסד אקוויטי: 0.074</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <div style="background:#2a1a17;border-radius:10px;padding:6px 10px"><div style="font-size:12px;color:#ff9a9a">המהלך שלך</div><div style="font-size:16px;font-weight:700;direction:ltr;text-align:right">13/10 13/7</div><div style="font-size:12px;color:var(--muted)">ניצחון 49.6% · מארס 11.2%</div></div>
+      <div style="background:#1a2619;border-radius:10px;padding:6px 10px"><div style="font-size:12px;color:#8fd6a0">המהלך הטוב ביותר</div><div style="font-size:16px;font-weight:700;direction:ltr;text-align:right">13/4</div><div style="font-size:12px;color:var(--muted)">ניצחון 53.9% · מארס 12.0%</div></div>
+    </div>
+    <ul style="margin:0 0 10px;padding-inline-start:18px;font-size:14px;line-height:1.5">
+      <li>השארת שני חיילים בודדים (בנקודות 7 ו-10) בטווח של שני החיילים האחוריים של היריב.</li>
+      <li>סיכוי להיפגע: 18 מתוך 36 הטלות (50%), לעומת 0% במהלך המומלץ.</li>
+      <li>13/4 שומר על כל החיילים מוגנים ומוסיף בונה לבית – אין סיבה לקחת סיכון בעמדה שווה.</li>
+    </ul>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="u pbtn gold" id="pDemo"><i class="ti ti-player-play"></i> הדגם על הלוח</button>
+      <button class="u pbtn dark" id="pCont">המשך</button>
+      <span style="font-size:12px;color:var(--muted);margin-inline-start:auto">המהלך שלך נשאר על הלוח</span>
+    </div></div>`);
+  $('pDemo').onclick = startDemo;
+  $('pCont').onclick = () => { closeOv(); botTurn(gameId); };
+}
+function startDemo() { closeOv(); after = clone(pos); pos = clone(SCEN); mode = 'demo'; demoMine = false; $('demo').style.display = 'block'; runDemo(); }
+function runDemo() {
+  $('demoT').textContent = demoMine ? 'שלך: 13/10 13/7' : 'מומלץ: 13/4';
+  $('dMine').textContent = demoMine ? 'המומלץ' : 'שלי';
+  ghosts = demoMine ? MINE : BEST; render();
+}
+$('dAgain').onclick = runDemo;
+$('dMine').onclick = () => { demoMine = !demoMine; runDemo(); };
+$('dOk').onclick = () => { $('demo').style.display = 'none'; ghosts = null; pos = after; botTurn(gameId); };
+
+/* ---------- pause / stop / training toggle ---------- */
+$('gPause').onclick = () => {
+  if (mode === 'demo') return;
+  ovShow(`<div dir="rtl" style="text-align:center"><i class="ti ti-player-pause" style="font-size:40px;color:var(--gold)"></i><div style="font-size:20px;margin:6px 0 14px">המשחק מושהה</div>
+    <div style="display:flex;gap:8px;justify-content:center"><button class="u pbtn gold" id="res">המשך משחק</button><button class="u pbtn dark" id="toHome">למסך הבית</button></div></div>`);
+  $('res').onclick = closeOv;
+  $('toHome').onclick = () => { closeOv(); show('home'); };
+};
+$('gStop').onclick = () => {
+  ovShow(`<div class="dlg" dir="rtl" style="width:380px"><div style="font-size:17px;font-weight:700;margin-bottom:4px">לעצור את המשחק?</div>
+    <div style="font-size:14px;color:var(--muted);margin-bottom:12px">המשחק יישמר בהיסטוריה בסטטוס "הופסק" ולא ייספר בסטטיסטיקה.</div>
+    <div style="display:flex;gap:8px"><button class="u pbtn" id="stY" style="background:#a8322a;color:#fff">עצור</button><button class="u pbtn dark" id="stN">ביטול</button></div></div>`);
+  $('stY').onclick = () => { closeOv(); gameId++; hasGame = false; mode = 'idle'; show('home'); $('hMsg').textContent = 'המשחק נשמר בהיסטוריה בסטטוס "הופסק"'; };
+  $('stN').onclick = closeOv;
+};
+$('trn').onclick = () => { trainOn = !trainOn; $('tg').classList.toggle('off', !trainOn); };
+
+/* ---------- new game sheet ---------- */
+function newGameSheet() {
+  let lv = level, tr = trainOn;
+  const html = () => `<div class="dlg" dir="rtl" style="width:470px" onclick="event.stopPropagation()">
+    <div style="font-size:18px;font-weight:700">משחק חדש</div>
+    <div class="lbl">שם המשחק (לא חובה)</div>
+    <input class="field" id="ngName" placeholder="אימון ערב – פתיחות" value="${$('ngName') ? $('ngName').value : ''}">
+    <div class="lbl">רמת המחשב</div>
+    <div class="seg">${LEVELS.map(l => `<button class="u ${l === lv ? 'on' : ''}" data-lv="${l}" style="flex:1">${l}</button>`).join('')}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0 14px;font-size:14px;cursor:pointer" id="ngTr">
+      <span>מצב אימון <span style="font-size:12px;color:var(--muted)">– הסבר על כל טעות</span></span><span class="tg ${tr ? '' : 'off'}"><span></span></span></div>
+    <div style="display:flex;gap:8px"><button class="u pbtn gold" id="ngGo" style="flex:1">התחל משחק</button><button class="u pbtn dark" id="ngX">ביטול</button></div></div>`;
+  const wire = () => {
+    $('ov').querySelectorAll('[data-lv]').forEach(b => b.onclick = () => { lv = b.dataset.lv; ovShow(html()); wire(); });
+    $('ngTr').onclick = () => { tr = !tr; ovShow(html()); wire(); };
+    $('ngGo').onclick = () => { const n = $('ngName').value.trim(); closeOv(); $('hMsg').textContent = ''; newGame(n, lv, tr); };
+    $('ngX').onclick = closeOv;
+  };
+  ovShow(html()); wire();
+}
+$('hNew').onclick = newGameSheet;
+$('hResume').onclick = () => { $('hMsg').textContent = ''; show('game'); };
+document.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => $('hMsg').textContent = `"${b.dataset.nav}" – המסך הזה יעוצב בשלב הבא של הסקירה`);
+
+/* ---------- menu ---------- */
+function menuHtml() {
+  const mi = (id, icon, label, note, badge) => `<button class="u mi" data-m="${id}"><i class="ti ti-${icon}"></i><span class="mt">${label}${note ? `<small>${note}</small>` : ''}</span>${badge != null ? `<b class="bdg">${badge}</b>` : ''}</button>`;
+  return `<div class="msheet" dir="rtl" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;margin-bottom:2px"><span style="font-size:17px;font-weight:700">תפריט</span>
+      <button class="u" id="mClose" style="margin-inline-start:auto;font-size:20px;color:var(--muted)"><i class="ti ti-x"></i></button></div>
+    <div class="mgrid"><div>
+      <div class="msec">המשחק הנוכחי</div>
+      ${mi('new', 'plus', 'משחק חדש', 'הנוכחי יישמר כמושהה')}
+      ${mi('rename', 'pencil', 'שינוי שם המשחק')}
+      ${mi('info', 'info-circle', 'פרטי המשחק', 'רמה, שעת התחלה, מהלכים')}
+      ${mi('mistakes', 'alert-triangle', 'הטעויות שלי במשחק', 'צפייה בכל הטעויות עד כה', mistakes)}
+      <div class="msec">ניווט</div>
+      ${mi('home', 'home', 'מסך הבית', 'המשחק יישמר כמושהה')}
+      ${mi('history', 'history', 'היסטוריית משחקים')}
+      ${mi('stats', 'chart-line', 'סטטיסטיקה')}
+    </div><div>
+      <div class="msec">תצוגה מהירה</div>
+      <div class="mi" style="cursor:default"><i class="ti ti-palette"></i><span class="mt">ערכת עיצוב</span></div>
+      <div style="display:flex;gap:6px;padding:0 37px 6px 0">${Object.keys(TH).map(k => `<span class="sw${k === th ? ' on' : ''}" data-sw="${k}" style="background:linear-gradient(135deg,${TH[k].sw[0]} 50%,${TH[k].sw[1]} 50%)"></span>`).join('')}</div>
+      <div class="mi" style="cursor:default"><i class="ti ti-volume"></i><span class="mt">צלילים</span></div>
+      <div style="display:flex;padding:0 37px 6px 0"><div class="seg"><button class="u ${sound ? 'on' : ''}" data-snd="1">פועל</button><button class="u ${sound ? '' : 'on'}" data-snd="0">כבוי</button></div></div>
+      <div class="mi" style="cursor:default"><i class="ti ti-gauge"></i><span class="mt">מהירות המחשב</span></div>
+      <div style="display:flex;padding:0 37px 6px 0"><div class="seg">${['איטי', 'רגיל', 'מהיר'].map(v => `<button class="u ${v === speed ? 'on' : ''}" data-spd="${v}">${v}</button>`).join('')}</div></div>
+      <div class="msec">עוד</div>
+      ${mi('settings', 'settings', 'הגדרות', 'כיוון לוח, ספי טעויות, גיבוי')}
+      ${mi('help', 'help-circle', 'חוקי המשחק ועזרה')}
+    </div></div>
+    <div id="mNote" style="display:none;margin-top:6px;font-size:12px;color:var(--gold)"></div>
+  </div>`;
+}
+function openMenu(again) {
+  if (mode === 'demo') return;
+  ovShow(menuHtml(), true);
+  const o = $('ov');
+  if (again) o.querySelector('.msheet').style.animation = 'none';
+  o.onclick = closeOv; $('mClose').onclick = closeOv;
+  o.querySelectorAll('[data-sw]').forEach(s => s.onclick = () => { setTheme(s.dataset.sw); openMenu(true); });
+  o.querySelectorAll('[data-snd]').forEach(b => b.onclick = () => { sound = b.dataset.snd === '1'; openMenu(true); });
+  o.querySelectorAll('[data-spd]').forEach(b => b.onclick = () => { speed = b.dataset.spd; openMenu(true); });
+  o.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
+    const m = b.dataset.m;
+    if (m === 'rename') { closeOv(); const n = $('sname'); n.focus(); document.getSelection().selectAllChildren(n); return; }
+    if (m === 'home') { closeOv(); show('home'); return; }
+    if (m === 'new') { closeOv(); newGameSheet(); return; }
+    const note = $('mNote'); note.style.display = 'block';
+    note.textContent = `"${b.querySelector('.mt').firstChild.textContent.trim()}" – המסך הזה יעוצב בשלב הבא של הסקירה`;
+  });
+}
+$('gMenu').onclick = () => openMenu(false);
+
+/* ---------- theme / toolbar / fit ---------- */
+function setTheme(t) {
+  th = t;
+  document.querySelectorAll('[data-t]').forEach(x => x.classList.toggle('on', x.dataset.t === t));
+  render(); renderHome();
+}
+document.querySelectorAll('[data-t]').forEach(b => b.onclick = () => setTheme(b.dataset.t));
+$('tbScen').onclick = () => { closeOv(); $('demo').style.display = 'none'; ghosts = null; loadScenario(); };
+$('tbHome').onclick = () => { closeOv(); gameId++; hasGame = false; mode = 'idle'; $('demo').style.display = 'none'; $('hMsg').textContent = ''; show('home'); };
+
+const isPhoneLandscape = () => matchMedia('(pointer: coarse) and (orientation: landscape) and (max-height: 500px)').matches;
+function fit() {
+  const sc = $('screen');
+  if (isPhoneLandscape()) {
+    document.body.classList.add('device');
+    const s = Math.min(innerWidth / 852, innerHeight / 393);
+    sc.style.transform = `scale(${s})`;
+    sc.style.left = Math.max(0, (innerWidth - 852 * s) / 2) + 'px';
+    return;
+  }
+  document.body.classList.remove('device');
+  sc.style.transform = ''; sc.style.left = '';
+  const st = $('stage'), s = Math.min(1, st.clientWidth / 872);
+  $('frame').style.transform = `scale(${s})`;
+  st.style.height = (413 * s + 16) + 'px';
+}
+addEventListener('resize', fit);
+fit(); renderHome(); render();
+</script>
+</body>
+</html>
